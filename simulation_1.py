@@ -3,8 +3,8 @@ Created on Oct 12, 2016
 
 @author: mwittie
 '''
-import network
-import link
+import network_1 as network
+import link_1 as link
 import threading
 from time import sleep
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
     #create some send events
     for i in range(3):
-        client.udt_send(2, 'Sample data....................................................... %d' % i)
+        client.udt_send(2, 'Sample data...................................................................... %d' % i)
 
 
     #give the network sufficient time to transfer all packets before quitting
