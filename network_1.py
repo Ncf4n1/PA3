@@ -1,5 +1,6 @@
 '''
 Created on Oct 12, 2016
+
 @author: mwittie
 '''
 import queue
@@ -80,9 +81,15 @@ class Host:
     # @param dst_addr: destination address for the packet
     # @param data_S: data being transmitted to the network layer
     def udt_send(self, dst_addr, data_S):
-        p = NetworkPacket(dst_addr, data_S)
-        self.out_intf_L[0].put(p.to_byte_S()) #send packets always enqueued successfully
-        print('%s: sending packet "%s" on the out interface with mtu=%d' % (self, p, self.out_intf_L[0].mtu))
+        while len(data_S) > self.out_intf_L[0].mtu:
+            new_data_S = data_S[0:self.out_intf_L[0].mtu]
+            p = NetworkPacket(dst_addr, new_data_S)
+            self.out_intf_L[0].put(p.to_byte_S()) #send packets always enqueued successfully
+            print('%s: sending packet "%s" on the out interface with mtu=%d' % (self, p, self.out_intf_L[0].mtu))
+            data_S = data_S[self.out_intf_L[0].mtu:]
+        last_p = NetworkPacket(dst_addr, data_S)
+        self.out_intf_L[0].put(p.to_byte_S())
+        print('%s: sending final packet "%s" on the out interface with mtu=%d' % (self, last_p, self.out_intf_L[0].mtu))
 
     ## receive packet from the network layer
     def udt_receive(self):
@@ -148,4 +155,4 @@ class Router:
             self.forward()
             if self.stop:
                 print (threading.currentThread().getName() + ': Ending')
-                return 
+                return
