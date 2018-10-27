@@ -38,7 +38,7 @@ class NetworkPacket:
 
     ##@param dst_addr: address of the destination host
     # @param data_S: packet payload
-    def __init__(self, dst_addr, data_S, frag_flag = 1, offset = 0):
+    def __init__(self, dst_addr, data_S, frag_flag, offset):
         self.dst_addr = dst_addr
         self.data_S = data_S
         self.frag_flag = frag_flag
@@ -87,13 +87,15 @@ class Host:
     # @param dst_addr: destination address for the packet
     # @param data_S: data being transmitted to the network layer
     def udt_send(self, dst_addr, data_S):
-        while len(data_S) + NetworkPacket.dst_addr_S_length > self.out_intf_L[0].mtu:
-            new_data_S = data_S[0:self.out_intf_L[0].mtu - NetworkPacket.dst_addr_S_length]
-            p = NetworkPacket(dst_addr, new_data_S)
+        packet_offset = 0
+        while len(data_S) + NetworkPacket.dst_addr_S_length + NetworkPacket.offset_length + 1 > self.out_intf_L[0].mtu:
+            new_data_S = data_S[0:self.out_intf_L[0].mtu - NetworkPacket.dst_addr_S_length - NetworkPacket.offset_length - 1]
+            p = NetworkPacket(dst_addr, new_data_S, 1, packet_offset)
             self.out_intf_L[0].put(p.to_byte_S()) #send packets always enqueued successfully
             print('%s: sending packet "%s" on the out interface with mtu=%d' % (self, p, self.out_intf_L[0].mtu))
-            data_S = data_S[self.out_intf_L[0].mtu - NetworkPacket.dst_addr_S_length:]
-        last_p = NetworkPacket(dst_addr, data_S)
+            data_S = data_S[self.out_intf_L[0].mtu - NetworkPacket.dst_addr_S_length - NetworkPacket.offset_length - 1:]
+            packet_offset += self.out_intf_L[0].mtu
+        last_p = NetworkPacket(dst_addr, data_S, 0, packet_offset)
         self.out_intf_L[0].put(last_p.to_byte_S())
         print('%s: sending final packet "%s" on the out interface with mtu=%d' % (self, last_p, self.out_intf_L[0].mtu))
 
@@ -143,15 +145,17 @@ class Router:
                 pkt_S = self.in_intf_L[i].get()
                 #if packet exists make a forwarding decision
                 if pkt_S is not None:
+                    packet_offset = 0
                     p = NetworkPacket.from_byte_S(pkt_S) #parse a packet out
-                    while len(p.data_S) + NetworkPacket.dst_addr_S_length > self.out_intf_L[i].mtu:
-                        new_data_S = p.data_S[0:self.out_intf_L[i].mtu - NetworkPacket.dst_addr_S_length]
-                        packet = NetworkPacket(p.dst_addr, new_data_S)
+                    while len(p.data_S) + NetworkPacket.dst_addr_S_length + NetworkPacket.offset_length + 1 > self.out_intf_L[i].mtu:
+                        new_data_S = p.data_S[0:self.out_intf_L[i].mtu - NetworkPacket.dst_addr_S_length - NetworkPacket.offset_length - 1]
+                        packet = NetworkPacket(p.dst_addr, new_data_S, 1, packet_offset)
                         self.out_intf_L[i].put(packet.to_byte_S(), True) #send packets always enqueued successfully
                         print('%s: forwarding packet "%s" from interface %d to %d with mtu %d' \
                             % (self, p, i, i, self.out_intf_L[i].mtu))
-                        p.data_S = p.data_S[self.out_intf_L[i].mtu - NetworkPacket.dst_addr_S_length:]
-                    last_p = NetworkPacket(p.dst_addr, p.data_S)
+                        p.data_S = p.data_S[self.out_intf_L[i].mtu - NetworkPacket.dst_addr_S_length - NetworkPacket.offset_length - 1:]
+                        packet_offset += self.out_intf_L[i].mtu
+                    last_p = NetworkPacket(p.dst_addr, p.data_S, 0, packet_offset)
                     self.out_intf_L[i].put(last_p.to_byte_S(), True)
                     # HERE you will need to implement a lookup into the
                     # forwarding table to find the appropriate outgoing interface
