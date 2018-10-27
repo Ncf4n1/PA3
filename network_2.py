@@ -148,15 +148,15 @@ class Router:
                         new_data_S = p.data_S[0:self.out_intf_L[i].mtu - NetworkPacket.dst_addr_S_length]
                         packet = NetworkPacket(p.dst_addr, new_data_S)
                         self.out_intf_L[i].put(packet.to_byte_S(), True) #send packets always enqueued successfully
+                        print('%s: forwarding packet "%s" from interface %d to %d with mtu %d' \
+                            % (self, p, i, i, self.out_intf_L[i].mtu))
                         p.data_S = p.data_S[self.out_intf_L[i].mtu - NetworkPacket.dst_addr_S_length:]
                     last_p = NetworkPacket(p.dst_addr, p.data_S)
                     self.out_intf_L[i].put(last_p.to_byte_S(), True)
-                    #print('%s: sending final packet "%s" on the out interface with mtu=%d' % (self, last_p, self.out_intf_L[i].mtu))
                     # HERE you will need to implement a lookup into the
                     # forwarding table to find the appropriate outgoing interface
                     # for now we assume the outgoing interface is also i
-                    self.out_intf_L[i].put(p.to_byte_S(), True)
-                    print('%s: forwarding packet "%s" from interface %d to %d with mtu %d' \
+                    print('%s: forwarding final packet "%s" from interface %d to %d with mtu %d' \
                         % (self, p, i, i, self.out_intf_L[i].mtu))
             except queue.Full:
                 print('%s: packet "%s" lost on interface %d' % (self, p, i))
