@@ -71,7 +71,7 @@ class NetworkPacket:
 
 ## Implements a network host for receiving and transmitting data
 class Host:
-
+    packet_reassembly_list = []
     ##@param addr: address of this node represented as an integer
     def __init__(self, addr):
         self.addr = addr
@@ -104,6 +104,27 @@ class Host:
         pkt_S = self.in_intf_L[0].get()
         if pkt_S is not None:
             print('%s: received packet "%s" on the in interface' % (self, pkt_S))
+            self.packet_reassembly_list.append(pkt_S)
+            if (pkt_S[NetworkPacket.dst_addr_S_length] == '0'):
+                final_packet_string = ''
+                min_offset = float("inf")
+                test_min_offset = ''
+                while True:
+                    current_lowest_packet = self.packet_reassembly_list[0]
+                    for packet in self.packet_reassembly_list:
+                        test_min_offset = packet[NetworkPacket.dst_addr_S_length + 1:NetworkPacket.dst_addr_S_length + 3]
+                        if int(test_min_offset) < min_offset:
+                            current_lowest_packet = packet
+                            min_offset = int(test_min_offset)
+
+                    final_packet_string += current_lowest_packet[NetworkPacket.dst_addr_S_length + NetworkPacket.offset_length + 1:]
+                    self.packet_reassembly_list.remove(current_lowest_packet)
+
+                    if (len(self.packet_reassembly_list) == 0):
+                        break
+
+                print('Packet reassembled at %s with message %s' % (self, final_packet_string))
+
 
     ## thread target for the host to keep receiving data
     def run(self):
@@ -155,7 +176,7 @@ class Router:
                             % (self, p, i, i, self.out_intf_L[i].mtu))
                         p.data_S = p.data_S[self.out_intf_L[i].mtu - NetworkPacket.dst_addr_S_length - NetworkPacket.offset_length - 1:]
                         packet_offset += self.out_intf_L[i].mtu
-                    last_p = NetworkPacket(p.dst_addr, p.data_S, 0, packet_offset)
+                    last_p = NetworkPacket(p.dst_addr, p.data_S, p.frag_flag, packet_offset)
                     self.out_intf_L[i].put(last_p.to_byte_S(), True)
                     # HERE you will need to implement a lookup into the
                     # forwarding table to find the appropriate outgoing interface
