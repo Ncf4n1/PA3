@@ -9,7 +9,7 @@ from time import sleep
 
 ##configuration parameters
 router_queue_size = 0 #0 means unlimited
-simulation_time = 20 #give the network sufficient time to transfer all packets before quitting
+simulation_time = 60 #give the network sufficient time to transfer all packets before quitting
 
 if __name__ == '__main__':
     object_L = [] #keeps track of objects, so we can kill their threads
@@ -56,14 +56,14 @@ if __name__ == '__main__':
 
     #add all the links
     #link parameters: from_node, from_intf_num, to_node, to_intf_num, mtu
-    link_layer.add_link(link.Link(client1, 0, router_a, 0, 50))
-    link_layer.add_link(link.Link(client2, 0, router_a, 1, 50))
-    link_layer.add_link(link.Link(router_a, 0, router_b, 0, 50))
-    link_layer.add_link(link.Link(router_a, 1, router_c, 0, 50))
+    link_layer.add_link(link.Link(client1, 0, router_a, 0, 70))
+    link_layer.add_link(link.Link(client2, 0, router_a, 1, 70))
+    link_layer.add_link(link.Link(router_a, 0, router_b, 0, 60))
+    link_layer.add_link(link.Link(router_a, 1, router_c, 0, 60))
     link_layer.add_link(link.Link(router_b, 0, router_d, 0, 50))
     link_layer.add_link(link.Link(router_c, 0, router_d, 1, 50))
-    link_layer.add_link(link.Link(router_d, 0, server1, 0, 50))
-    link_layer.add_link(link.Link(router_d, 1, server2, 0, 50))
+    link_layer.add_link(link.Link(router_d, 0, server1, 0, 45))
+    link_layer.add_link(link.Link(router_d, 1, server2, 0, 45))
 
 
     #start all the objects

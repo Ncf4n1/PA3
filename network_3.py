@@ -176,7 +176,7 @@ class Router:
                     p = NetworkPacket.from_byte_S(pkt_S) #parse a packet out
                     while len(p.data_S) + 2 * NetworkPacket.addr_S_length + NetworkPacket.offset_length + 1 > self.out_intf_L[self.routing_table[i]].mtu:
                         new_data_S = p.data_S[0:self.out_intf_L[self.routing_table[i]].mtu - 2 * NetworkPacket.addr_S_length - NetworkPacket.offset_length - 1]
-                        packet = NetworkPacket(p.dst_addr, new_data_S, 1, packet_offset)
+                        packet = NetworkPacket(p.src_addr, p.dst_addr, new_data_S, 1, packet_offset)
                         self.out_intf_L[self.routing_table[i]].put(packet.to_byte_S(), True) #send packets always enqueued successfully
                         print('%s: forwarding packet "%s" from interface %d to %d with mtu %d\n' \
                             % (self, p, i, i, self.out_intf_L[self.routing_table[i]].mtu))
